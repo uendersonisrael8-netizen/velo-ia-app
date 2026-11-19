@@ -7,6 +7,8 @@ import {
   type KeyboardEvent,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   AlertCircle,
   Menu,
@@ -213,6 +215,33 @@ export function ChatScreen({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [drawerOpen]);
 
+  // Botão voltar do Android: fecha o histórico antes de sair do app.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let remove: (() => void) | undefined;
+    let disposed = false;
+
+    void CapacitorApp.addListener("backButton", () => {
+      if (drawerOpen) {
+        setDrawerOpen(false);
+      } else {
+        void CapacitorApp.exitApp();
+      }
+    }).then((listener) => {
+      if (disposed) {
+        void listener.remove();
+        return;
+      }
+      remove = () => void listener.remove();
+    });
+
+    return () => {
+      disposed = true;
+      remove?.();
+    };
+  }, [drawerOpen]);
+
   const newConversation = useCallback(() => {
     setConversationId(null);
     applyMessages([]);
@@ -259,10 +288,24 @@ export function ChatScreen({
       let activeId = conversationId;
 
       if (!activeId) {
-        const created = await request((token) => createConversation(token));
-        activeId = created.id;
-        setConversationId(created.id);
-        setConversations((current) => [created, ...current]);
+        try {
+          const created = await request((token) => createConversation(token));
+          activeId = created.id;
+          setConversationId(created.id);
+          setConversations((current) => [created, ...current]);
+        } catch (createError) {
+          // Migração do Supabase ainda não aplicada: a conversa não pode ser
+          // salva, mas a velo ia continua respondendo nesta sessão.
+          if (
+            createError instanceof ApiError &&
+            createError.code === "ai_history_unavailable"
+          ) {
+            setHistoryCode(createError.code);
+            setHistoryError(createError.message);
+          } else {
+            throw createError;
+          }
+        }
       }
 
       const data = await request((token) =>

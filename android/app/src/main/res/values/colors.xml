@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#EF430C</color>
+    <color name="colorPrimaryDark">#11100E</color>
+    <color name="colorAccent">#EF430C</color>
+    <color name="velo_orange">#EF430C</color>
+    <color name="velo_ink">#11100E</color>
+    <color name="splash_background">#EF430C</color>
+</resources>

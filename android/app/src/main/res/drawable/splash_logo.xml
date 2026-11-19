@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo da abertura: a estrela da marca em tamanho confortável. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,18 C57.5,40.5 67.5,50.5 90,54 C67.5,57.5 57.5,67.5 54,90 C50.5,67.5 40.5,57.5 18,54 C40.5,50.5 50.5,40.5 54,18 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M78,20 C79.2,28.6 82.4,31.8 91,33 C82.4,34.2 79.2,37.4 78,46 C76.8,37.4 73.6,34.2 65,33 C73.6,31.8 76.8,28.6 78,20 Z" />
+</vector>

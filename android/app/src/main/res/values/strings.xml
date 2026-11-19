@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Velo IA</string>
+    <string name="title_activity_main">Velo IA</string>
+    <string name="package_name">app.velo.ia</string>
+    <string name="custom_url_scheme">app.velo.ia</string>
+</resources>

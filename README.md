@@ -85,6 +85,11 @@ O APK sai em `android/app/build/outputs/apk/debug/app-debug.apk`.
 > Esta primeira versão é **debug**, instalável e sem assinatura de loja. Para
 > publicar na Play Store será preciso gerar um keystore e assinar o release.
 
+O APK de debug usa uma chave fixa commitada em
+`android/app/velo-debug.jks` (senha `android`, alias `androiddebugkey`). Ela não
+é um segredo e não serve para publicar na loja; está ali só para que uma versão
+nova do APK instale por cima da anterior sem precisar desinstalar.
+
 ## Variáveis do GitHub Actions
 
 Em **Settings → Secrets and variables → Actions → Variables**, crie:

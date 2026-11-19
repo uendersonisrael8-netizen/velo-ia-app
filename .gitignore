@@ -18,6 +18,7 @@ android/app/src/main/assets/capacitor.plugins.json
 *.aab
 *.keystore
 *.jks
+!android/app/velo-debug.jks
 
 # Sistema
 .DS_Store

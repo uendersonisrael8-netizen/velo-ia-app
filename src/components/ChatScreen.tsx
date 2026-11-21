@@ -481,7 +481,7 @@ export function ChatScreen({
       setError(null);
     } catch {
       setError(
-        "Permissão do microfone negada. Libere o microfone para usar a voz.",
+        "Permissão do microfone negada. Abra as configurações do app e libere o microfone, depois tente de novo.",
       );
       setRecording(false);
     }

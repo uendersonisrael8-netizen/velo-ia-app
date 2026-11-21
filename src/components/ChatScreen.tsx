@@ -14,6 +14,8 @@ import {
   Menu,
   RefreshCw,
   SquarePen,
+  Volume2,
+  VolumeX,
   WifiOff,
 } from "lucide-react";
 import { BrandMark } from "./Brand";
@@ -28,6 +30,7 @@ import {
   getConversation,
   listConversations,
   sendChat,
+  transcribeAudio,
   type ChatHistoryEntry,
 } from "../lib/api";
 import { prepareImage } from "../lib/images";
@@ -90,6 +93,8 @@ export function ChatScreen({
   const [error, setError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyCode, setHistoryCode] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [speakReplies, setSpeakReplies] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -97,6 +102,9 @@ export function ChatScreen({
   const messagesRef = useRef<ChatMessage[]>([]);
   const sessionRef = useRef(session);
   const sendingRef = useRef(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     sessionRef.current = session;
@@ -252,8 +260,8 @@ export function ChatScreen({
     requestAnimationFrame(() => textareaRef.current?.focus());
   }, [applyMessages]);
 
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
+  const sendMessage = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     const image = pendingImage?.dataUrl ?? null;
     if ((!text && !image) || sending || sendingRef.current || preparingImage) {
       return;
@@ -332,6 +340,24 @@ export function ChatScreen({
       ]);
 
       void refreshConversations();
+
+      if (speakReplies) {
+        const synth = window.speechSynthesis;
+        if (synth) {
+          synth.cancel();
+          const utterance = new SpeechSynthesisUtterance(
+            data.reply.replace(/https?:\/\/\S+/g, "").replace(/[*_#`]/g, ""),
+          );
+          utterance.lang = "pt-BR";
+          utterance.rate = 1.04;
+          const voices = synth.getVoices();
+          const ptVoice = voices.find((voice) =>
+            /^pt/i.test(voice.lang),
+          );
+          if (ptVoice) utterance.voice = ptVoice;
+          synth.speak(utterance);
+        }
+      }
     } catch (sendError) {
       applyMessages(
         messagesRef.current.filter((message) => message.id !== optimistic.id),
@@ -352,7 +378,114 @@ export function ChatScreen({
     refreshConversations,
     request,
     sending,
+    speakReplies,
   ]);
+
+  const toggleRecording = useCallback(async () => {
+    if (recording) {
+      const recorder = recorderRef.current;
+      recorderRef.current = null;
+      if (recorder && recorder.state !== "inactive") {
+        try {
+          recorder.stop();
+        } catch {
+          // Já parou.
+        }
+      }
+      recordStreamRef.current?.getTracks().forEach((track) => track.stop());
+      recordStreamRef.current = null;
+      return;
+    }
+
+    if (sending || sendingRef.current) return;
+
+    if (typeof MediaRecorder === "undefined") {
+      setError("Gravação de voz não suportada neste dispositivo.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      });
+      recordStreamRef.current = stream;
+      recordChunksRef.current = [];
+
+      const mimeType = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/ogg;codecs=opus",
+      ].find((type) => MediaRecorder.isTypeSupported(type));
+
+      const recorder = new MediaRecorder(
+        stream,
+        mimeType ? { mimeType, audioBitsPerSecond: 32000 } : undefined,
+      );
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) recordChunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        const chunks = recordChunksRef.current;
+        recordChunksRef.current = [];
+        recordStreamRef.current?.getTracks().forEach((track) => track.stop());
+        recordStreamRef.current = null;
+
+        const type = recorder.mimeType || mimeType || "audio/webm";
+        const blob = new Blob(chunks, { type });
+
+        if (!blob.size) {
+          setError("Não consegui capturar sua voz. Tente de novo.");
+          setRecording(false);
+          return;
+        }
+
+        setRecording(false);
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result ?? ""));
+            reader.onerror = () => reject(new Error("falha ao ler o áudio"));
+            reader.readAsDataURL(blob);
+          });
+
+          const token = sessionRef.current.access_token;
+          const text = await transcribeAudio(token, dataUrl, type);
+          if (!text.trim()) {
+            setError("Não entendi o áudio. Tente falar de novo.");
+            return;
+          }
+          await sendMessage(text);
+        } catch (transcribeError) {
+          setError(messageOf(transcribeError));
+        }
+      };
+
+      recorder.onerror = () => {
+        setError("Não consegui gravar o áudio. Tente de novo.");
+        setRecording(false);
+        recordStreamRef.current?.getTracks().forEach((track) => track.stop());
+        recordStreamRef.current = null;
+      };
+
+      recorder.start();
+      setRecording(true);
+      setError(null);
+    } catch {
+      setError(
+        "Permissão do microfone negada. Libere o microfone para usar a voz.",
+      );
+      setRecording(false);
+    }
+  }, [sendMessage, session]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (
@@ -457,6 +590,24 @@ export function ChatScreen({
           </div>
 
           <div className="chat-actions">
+            <button
+              type="button"
+              className={`icon-btn ${speakReplies ? "is-active" : ""}`}
+              onClick={() => setSpeakReplies((value) => !value)}
+              aria-pressed={speakReplies}
+              aria-label={
+                speakReplies
+                  ? "Desativar voz da velo ia"
+                  : "Ativar voz da velo ia"
+              }
+              title={speakReplies ? "Voz ativada" : "Ativar voz"}
+            >
+              {speakReplies ? (
+                <Volume2 size={18} strokeWidth={1.9} />
+              ) : (
+                <VolumeX size={18} strokeWidth={1.9} />
+              )}
+            </button>
             <ThemeButton theme={theme} onToggle={onToggleTheme} />
             <button
               type="button"
@@ -575,6 +726,13 @@ export function ChatScreen({
           onKeyDown={handleKeyDown}
           textareaRef={textareaRef}
           fileInputRef={fileInputRef}
+          recording={recording}
+          onToggleRecording={() => void toggleRecording()}
+          recordingSupported={
+            typeof MediaRecorder !== "undefined" &&
+            typeof navigator !== "undefined" &&
+            !!navigator.mediaDevices?.getUserMedia
+          }
         />
       </div>
     </div>

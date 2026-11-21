@@ -1,5 +1,5 @@
 import { useEffect, type ChangeEvent, type KeyboardEvent, type RefObject } from "react";
-import { ArrowUp, ImagePlus, Loader2, X } from "lucide-react";
+import { ArrowUp, ImagePlus, Loader2, Mic, MicOff, X } from "lucide-react";
 import { formatBytes } from "../lib/format";
 import type { PendingImage } from "../lib/types";
 
@@ -16,6 +16,9 @@ type ComposerProps = {
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   fileInputRef: RefObject<HTMLInputElement | null>;
+  recording?: boolean;
+  onToggleRecording?: () => void;
+  recordingSupported?: boolean;
 };
 
 export function Composer({
@@ -31,6 +34,9 @@ export function Composer({
   onKeyDown,
   textareaRef,
   fileInputRef,
+  recording = false,
+  onToggleRecording,
+  recordingSupported = true,
 }: ComposerProps) {
   useEffect(() => {
     const node = textareaRef.current;
@@ -82,7 +88,7 @@ export function Composer({
           type="button"
           className="composer-btn"
           onClick={() => fileInputRef.current?.click()}
-          disabled={sending || preparingImage}
+          disabled={sending || preparingImage || recording}
           aria-label="Anexar imagem"
           title="Anexar imagem (JPG, PNG ou WebP)"
         >
@@ -92,6 +98,27 @@ export function Composer({
             <ImagePlus size={19} strokeWidth={1.8} />
           )}
         </button>
+
+        {recordingSupported ? (
+          <button
+            type="button"
+            className={`composer-btn ${recording ? "is-recording" : ""}`}
+            onClick={onToggleRecording}
+            disabled={sending || preparingImage}
+            aria-label={recording ? "Parar de gravar" : "Gravar mensagem de voz"}
+            title={
+              recording
+                ? "Parar de gravar e enviar"
+                : "Falar com a velo ia (grava e transcreve)"
+            }
+          >
+            {recording ? (
+              <MicOff size={19} strokeWidth={1.8} className="pulse" />
+            ) : (
+              <Mic size={19} strokeWidth={1.8} />
+            )}
+          </button>
+        ) : null}
 
         <textarea
           ref={textareaRef}

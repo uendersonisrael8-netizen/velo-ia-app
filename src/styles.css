@@ -188,6 +188,12 @@ img {
   background: var(--elevated);
 }
 
+.icon-btn.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 .icon-btn.compact {
   width: 32px;
   height: 32px;
@@ -913,6 +919,31 @@ img {
 
 .composer-btn:disabled {
   opacity: 0.4;
+}
+
+.composer-btn.is-recording {
+  color: #fff;
+  background: #dc2626;
+}
+
+.composer-btn.is-recording:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.composer-btn .pulse {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.7;
+  }
 }
 
 .composer-box textarea {

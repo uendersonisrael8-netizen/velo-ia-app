@@ -141,3 +141,15 @@ export async function sendChat(token: string, input: ChatRequest) {
     body: JSON.stringify(body),
   });
 }
+
+export async function transcribeAudio(token: string, audioBase64: string, mimeType: string) {
+  const data = await request<{ text: string }>(
+    "/api/ai/transcribe",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ audio: audioBase64, mimeType }),
+    },
+  );
+  return typeof data.text === "string" ? data.text : "";
+}

@@ -15,6 +15,10 @@ export type ChatMessage = {
   created_at?: string;
   /** Data URL usada só na prévia local; o servidor guarda apenas o texto. */
   image?: string;
+  /** Indica se a resposta consultou a web em tempo real. */
+  searched?: boolean;
+  /** Fontes pesquisadas na web. */
+  sources?: Array<{ title: string; url: string }>;
 };
 
 export type PendingImage = {

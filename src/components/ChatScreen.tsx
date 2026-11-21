@@ -336,6 +336,8 @@ export function ChatScreen({
           role: "assistant",
           content: data.reply,
           created_at: new Date().toISOString(),
+          searched: data.searched,
+          sources: data.sources,
         },
       ]);
 

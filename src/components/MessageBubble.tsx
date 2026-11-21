@@ -18,7 +18,30 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
               className="msg-image"
             />
           ) : null}
+          {!mine && message.searched ? (
+            <p className="msg-searched">
+              <span aria-hidden="true">🌐</span> Pesquisou na web
+            </p>
+          ) : null}
           {message.content ? <p>{message.content}</p> : null}
+          {!mine && message.sources && message.sources.length > 0 ? (
+            <div className="msg-sources">
+              <p className="msg-sources-title">Fontes</p>
+              <ul>
+                {message.sources.map((source, index) => (
+                  <li key={index}>
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {source.title || source.url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
         {time ? <time className="msg-time">{time}</time> : null}
       </div>

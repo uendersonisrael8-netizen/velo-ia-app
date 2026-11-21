@@ -633,6 +633,49 @@ img {
   font-weight: 500;
 }
 
+.msg-searched {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.msg-sources {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.msg-sources-title {
+  margin-bottom: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.msg-sources ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.msg-sources a {
+  font-size: 11.5px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.msg-sources a:hover {
+  text-decoration: underline;
+}
+
 .msg-image {
   display: block;
   width: 100%;
